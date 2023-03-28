@@ -134,12 +134,6 @@ opts_RMPC.hs = hs_RMPC;
 % MPC
 opts_UQMPC = opts_RMPC;
 opts_UQMPC.Nu = Nu_RMPC; % here the UQ-RMPC does not update \nu at every time step,...
-% it used \nu value of the RMPC, to keep the number of constraints
-% invariant. The Algorithm 1 in the paper is designed for computing \nu_k
-% for UQ-RMPC, and this has been implemented in the code
-% In practice, this can be choosen as a long enough horizon, e.g., 2*Nu_RMPC, which is 
-% sufficient to satisfy the convergence condition.
-
 
 % Computed Ps in (22)
 addpath('SDPT3-4.0');
