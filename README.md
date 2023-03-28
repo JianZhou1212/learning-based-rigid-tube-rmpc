@@ -78,8 +78,4 @@ This folder saves the files for making the figures used in the article, you can 
 ## Some implementation details
 (1) It is not necessary to run **offline_parameters_computation.m** if you do not want to update the parameter values, but you need to run **run_first.m** to add the path of folders.
 
-(2) In the article, the horizon $\nu_k$ in (20) is updated according to Algorithm, but this will change the number of constraints of MPC. In our code, we implemented Algorithm 1 and found that $\nu_k$ is almost equal to $\nu_s$. Therefore, we use $\nu_s$ to replace $\nu_k$ (see line 136 in the file *offline_parameters_computation.m*). In practical applications, we can make $\nu_k$ long enough such that the condition on $\nu_k$ such that 
-
-$\max_{z\in \Omega(1-h^*_k,\nu_k)}\bar{F}\Psi^{\nu_k+1}z\leq 1-h_k^*.$
-
-will be satisfied. For example, a suggestion can be $\nu_k = 2\nu_s$.
+(2) In the article, the horizon $\nu_k$ in (20) is updated according to Algorithm, but this will change the number of constraints of MPC. In our code, we implemented Algorithm 1 and found that $\nu_k$ is almost equal to $\nu_s$. Therefore, we use $\nu_s$ to replace $\nu_k$ (see line 136 in the file *offline_parameters_computation.m*). In practical applications, we can make $\nu_k$ long enough such that the condition on $\nu_k$ such that the condition above Algorithm 1 will be satisfied. For example, a suggestion can be $\nu_k = 2\nu_s$.
