@@ -26,7 +26,7 @@ Rakovic, Sasa V., et al. "Invariant approximations of the minimal robust positiv
 
 **ComputeFeasibleRegion.m**
 
-A function to compute the feasible region corresponding to different disturbance sets, e.g., $\mathbb{W}$, ${\hat{\mathbb{W}}}$, $\mathbb{W}_{\rm true}$, and so on.
+A function to compute the feasible region corresponding to different disturbance sets, e.g., $\mathbb{W}$, ${\hat{\mathbb{W}}}_{k}^{\star}$, $\mathbb{W}_{\rm true}$, and so on.
 
 **InitialSetComputation.m**
 
