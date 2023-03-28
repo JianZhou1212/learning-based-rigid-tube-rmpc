@@ -92,11 +92,13 @@ opts_feasible_region.nc = nc;
 opts_feasible_region.nx = nx;
 opts_feasible_region.nu = nu;
 opts_feasible_region.N = N;
+opts_feasible_region.Ps = ones(nx + N*nu, nx + N*nu);
 opts_feasible_region.num_half_space_S = num_half_space_S;
 IniFeaReg = ComputeFeasibleRegion(opts_feasible_region);
 [F_N_RMPC, hs_RMPC, Nu_RMPC] = IniFeaReg.ComFeasibleRegion_RMPC( ); % the feasible region of RMPC, F_N_RMPC is the feasible region, hs_RMPC is the value of h_s, Nu_RMPC is the value of \nu 
 [F_N_True, hs_True] = IniFeaReg.ComFeasibleRegion_True( ); % the true feasible region and hs value with respect to W_true, just for analysis, unknown to the EV
 [F_N_Hat_Opt, hs_Hat_Opt] = IniFeaReg.ComFeasibleRegion_UQOPT( ); % the feasible region and hs value with respect to \hat{W}_{opt}, just for analysis, unknown to the EV
+opts_feasible_region.hs = hs_RMPC;
 
 % define parameters for modeling the EV and LV
 opts_Car.A = A;
@@ -131,7 +133,37 @@ opts_RMPC.hs = hs_RMPC;
 % define parameters for UQ-RMPC, i.e., uncertainty-quantification robust
 % MPC
 opts_UQMPC = opts_RMPC;
-opts_UQMPC.Nu = Nu_RMPC; % here the UQ-RMPC does not update \nu at every time step, it used \nu value of the RMPC, to keep the number of constraints invariant
+opts_UQMPC.Nu = Nu_RMPC; % here the UQ-RMPC does not update \nu at every time step,...
+% it used \nu value of the RMPC, to keep the number of constraints
+% invariant. The Algorithm 1 in the paper is designed for computing \nu_k
+% for UQ-RMPC, and this has been implemented in the code
+% In practice, this can be choosen as a long enough horizon, e.g., 2*Nu_RMPC, which is 
+% sufficient to satisfy the convergence condition.
+
+
+% Computed Ps in (22)
+addpath('SDPT3-4.0');
+H = [ ];
+h = [ ];
+for i = 0:1:Nu_RMPC
+    H = [H; F_bar*(Psi^i)];
+    h = [h; 1 - hs_RMPC];
+end
+Poly = Polyhedron(H, h);
+Poly = minHRep(Poly);
+V = Poly.V;
+[m, ~] = size(V); % number of vertices
+Ps = sdpvar(nx + N*nu, nx + N*nu); % Ps >= 0
+
+Constraints = [ ];
+for i = 1:1:m
+    Constraints = [Constraints, norm(Ps*V(i, :)', 2) <= 1]; % Boyd, convex optimization, Eq.(8.11)
+end
+Objective = -logdet(Ps); % log det[A^(-1)]
+sol = optimize(Constraints, Objective, sdpsettings('solver','sdpt3'));
+Ps = value(Ps);
+opts_UQMPC.Ps = Ps;
+opts_feasible_region.Ps = Ps;
 
 % save the parameters
 parameters.opts_ini_set = opts_ini_set;
