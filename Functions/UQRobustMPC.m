@@ -77,7 +77,7 @@ classdef UQRobustMPC < handle
                 hk(i) = full(obj.Com_hs(F_Com(i, :), S_A, S_b)); % h_k^*
             end
             
-            Nu_k = Com_Nuk(obj, hk) % this we have checked is equal to Nu (\nu_s), so not used, juts present it here for 
+            Nu_k = Com_Nuk(obj, hk); % this we have checked is equal to Nu (\nu_s), so not used, juts present it here for 
             % some investigation, e.g., provide some insight for choosing a
             % fixed value of \nu_k in UQ-RMPC.
             var_opt = full(obj.optimizer(x_k, hk, S_A, S_b));
