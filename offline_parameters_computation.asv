@@ -35,7 +35,7 @@ distance_error = 15; % constraint on the relative distance between EV and LV
 acc_bound = 2;       % constraint on acceleration of EV
 F = [1/distance_error 0; -1/distance_error 0; 0 0;0 0]; 
 G = [0; 0; 1/acc_bound; -1/acc_bound];  
-x_des = [-35; 0];    % desired state: relative long. distance and relative long. speed
+x_des = [-35; 0]; % desired state: relative long. distance and relative long. speed
 nx = 2; 
 nu = 1; 
 nc = 4; 
@@ -55,8 +55,10 @@ Psi{2, 2} = M;
 Psi = cell2mat(Psi);
 F_bar = [F + G*K G*E]; 
 
+% define parameters for geting an initial quantification, i.e., computed
+% \hat{W}_0^* using \mathcal{I}_0^w
 opts_ini_set.B = B;
-opts_ini_set.N_pre_sam = 5; 
+opts_ini_set.N_pre_sam = 5; % the is |\mathcal{I}_0^w|, size of initial samples, will be changed in the implementatation
 opts_ini_set.N_sam_opt = N_sam_opt;
 opts_ini_set.W = W;
 opts_ini_set.min_u_LV = min_u_LV;
@@ -66,16 +68,17 @@ opts_ini_set.Xi_true_LV = Xi_true_LV;
 opts_ini_set.nx = nx;
 IniSet = InitialSetComputation(opts_ini_set);
 [alpha_opt, v_opt] = IniSet.solve_opt(samples_opt');
-W_hat_opt = (1 - alpha_opt)*v_opt + alpha_opt*W; 
+W_hat_opt = (1 - alpha_opt)*v_opt + alpha_opt*W; % here returns the optimal quantified set, \hat{W}_{opt}, based on vertices of W_true
 
-S_hat_opt = compute_mrpi_set(Phi, W_hat_opt, 1e-2);
-S_true = compute_mrpi_set(Phi, W_true, 1e-2); 
-S = compute_mrpi_set(Phi, W, 1e-2); 
-S_hat_opt = minHRep(S_hat_opt);
-S_true = minHRep(S_true);      
-S = minHRep(S);                
-num_half_space_S = length(S.b); 
+S_hat_opt = compute_mrpi_set(Phi, W_hat_opt, 1e-2); % RMPI set corresponding to \hat{W}_{opt} (outer approximation)
+S_true = compute_mrpi_set(Phi, W_true, 1e-2); % RMPI set corresponding to W_true (outer approximation)
+S = compute_mrpi_set(Phi, W, 1e-2); % RMPI set corresponding to W (outer approximation)
+S_hat_opt = minHRep(S_hat_opt); % reduce redundant vertices of the set
+S_true = minHRep(S_true);       % reduce redundant vertices of the set
+S = minHRep(S);                 % reduce redundant vertices of the set
+num_half_space_S = length(S.b); % number of half spaces of the set S, will be used in the implementation
 
+% define parameters for computing the feasible region of state s_0|k
 opts_feasible_region.S = S;
 opts_feasible_region.S_true = S_true;
 opts_feasible_region.S_hat_opt = S_hat_opt;
@@ -91,11 +94,12 @@ opts_feasible_region.N = N;
 opts_feasible_region.Ps = ones(nx + N*nu, nx + N*nu);
 opts_feasible_region.num_half_space_S = num_half_space_S;
 IniFeaReg = ComputeFeasibleRegion(opts_feasible_region);
-[F_N_RMPC, hs_RMPC, Nu_RMPC] = IniFeaReg.ComFeasibleRegion_RMPC( ); 
-[F_N_True, hs_True] = IniFeaReg.ComFeasibleRegion_True( ); 
-[F_N_Hat_Opt, hs_Hat_Opt] = IniFeaReg.ComFeasibleRegion_UQOPT( ); 
+[F_N_RMPC, hs_RMPC, Nu_RMPC] = IniFeaReg.ComFeasibleRegion_RMPC( ); % the feasible region of RMPC, F_N_RMPC is the feasible region, hs_RMPC is the value of h_s, Nu_RMPC is the value of \nu 
+[F_N_True, hs_True] = IniFeaReg.ComFeasibleRegion_True( ); % the true feasible region and hs value with respect to W_true, just for analysis, unknown to the EV
+[F_N_Hat_Opt, hs_Hat_Opt] = IniFeaReg.ComFeasibleRegion_UQOPT( ); % the feasible region and hs value with respect to \hat{W}_{opt}, just for analysis, unknown to the EV
 opts_feasible_region.hs = hs_RMPC;
 
+% define parameters for modeling the EV and LV
 opts_Car.A = A;
 opts_Car.B = B;
 opts_Car.min_u_LV = min_u_LV;
@@ -103,6 +107,7 @@ opts_Car.max_u_LV = max_u_LV;
 opts_Car.Xi_true_EV = Xi_true_EV;
 opts_Car.Xi_true_LV = Xi_true_LV;
 
+% define parameters of RMPC, i.e., conventional robust MPC
 opts_RMPC.N = N;
 opts_RMPC.nx = nx;
 opts_RMPC.nu = nu;
