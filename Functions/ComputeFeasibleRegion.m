@@ -61,10 +61,10 @@ classdef ComputeFeasibleRegion < handle
             % compute the value of \nu according to hs
             Nu = obj.N; % Nu must be longer than N
             while Nu
-                goal = zeros(obj.nc, 1); % save vector value max{F_bar*(Pis)^(Nu + 1)*z}
-                M = obj.F_bar*(obj.Psi^(Nu + 1));
+                goal     = zeros(obj.nc, 1); % save vector value max{F_bar*(Pis)^(Nu + 1)*z}
+                M        = obj.F_bar*(obj.Psi^(Nu + 1));
                 M_before = obj.F_bar*(obj.Psi^(Nu));
-                for i = 1:1:obj.nc
+                for i    = 1:1:obj.nc
                     goal(i) = full(obj.Com_z(M(i, :), hs, M_before));
                 end
                 if goal <= (1 - hs) % max{F_bar*(Psi)^(Nu + 1)*z} <= 1 - hs
@@ -80,25 +80,25 @@ classdef ComputeFeasibleRegion < handle
             % compute the feasible region of s_0|k with S
             % outputs the feasible region F_N, hs value, and \nu value Nu
             F_Com = obj.F + obj.G*obj.K; % [F + GK]
-            hs = zeros(obj.nc, 1);
+            hs    = zeros(obj.nc, 1);
             for i = 1:1:obj.nc
                 hs(i) = full(obj.Com_hs(F_Com(i, :))); % elementwisely get hs vector
             end
             Nu = ComNu_RMPC(obj, hs);
 
             Sam_num = 5000;
-            Sample = 50*rand(2,Sam_num) - 25;
+            Sample  = 50*rand(2,Sam_num) - 25;
             yalmip('clear')
-            z = sdpvar(size(obj.Psi,2), 1); 
-            proj_sample = sdpvar(obj.nx, 1);
+            z            = sdpvar(size(obj.Psi,2), 1); 
+            proj_sample  = sdpvar(obj.nx, 1);
             Input_sample = sdpvar(obj.nx, 1);
             cns = [];
             for i = 0:1:Nu
                 cns = [cns, obj.F_bar*(obj.Psi^i)*z <= ones(obj.nc, 1) - hs];
             end
-            cns = [cns,z(1:obj.nx,1) == proj_sample];
-            J = (proj_sample-Input_sample)'*(proj_sample-Input_sample);
-            ops = sdpsettings('relax', 0);
+            cns     = [cns,z(1:obj.nx,1) == proj_sample];
+            J       = (proj_sample-Input_sample)'*(proj_sample-Input_sample);
+            ops     = sdpsettings('relax', 0);
             Fea_Set = optimizer(cns,J,ops,Input_sample,proj_sample);
             
             % evaluate the function and form a convexhull
@@ -109,33 +109,33 @@ classdef ComputeFeasibleRegion < handle
             [convhull_index, ~] = convhull(sample_proj');
             F_Ns = sample_proj(:,convhull_index);
             F_Ns = Polyhedron(F_Ns');
-            F_N = F_Ns + obj.S;
+            F_N  = F_Ns + obj.S;
         end
 
         function [F_N, hs_true] = ComFeasibleRegion_True(obj)
             % compute the feasible region of s_0|k with S_true
             % outputs the feasible region F_N, hs value hs_true
-            F_Com = obj.F + obj.G*obj.K; % [F + GK]
+            F_Com   = obj.F + obj.G*obj.K; % [F + GK]
             hs_true = zeros(obj.nc, 1);
-            for i = 1:1:obj.nc
+            for i   = 1:1:obj.nc
                 hs_true(i) = full(obj.Com_hs_true(F_Com(i, :))); % elementwisely get hs vector
             end
 
             Nu_true = ComNu_RMPC(obj, hs_true);
             
             Sam_num = 5000;
-            Sample = 50*rand(2, Sam_num) - 25;
+            Sample  = 50*rand(2, Sam_num) - 25;
             yalmip('clear')
-            z = sdpvar(size(obj.Psi, 2), 1);
-            proj_sample =  sdpvar(obj.nx, 1);
+            z       = sdpvar(size(obj.Psi, 2), 1);
+            proj_sample  = sdpvar(obj.nx, 1);
             Input_sample = sdpvar(obj.nx, 1);
             cns = [];
-            for i = 0:1:Nu_true
+            for i   = 0:1:Nu_true
                 cns = [cns,obj.F_bar*(obj.Psi^i)*z <= ones(obj.nc, 1) - hs_true];
             end
-            cns = [cns,z(1:obj.nx) == proj_sample];
-            J = (proj_sample - Input_sample)'*(proj_sample - Input_sample);
-            ops = sdpsettings('relax', 0);
+            cns     = [cns,z(1:obj.nx) == proj_sample];
+            J       = (proj_sample - Input_sample)'*(proj_sample - Input_sample);
+            ops     = sdpsettings('relax', 0);
             Fea_Set = optimizer(cns, J, ops, Input_sample, proj_sample);
             
             % evaluate the function and form a convexhull
@@ -145,34 +145,34 @@ classdef ComputeFeasibleRegion < handle
             [convhull_index, ~] = convhull(sample_proj');
             F_Ns = sample_proj(:,convhull_index);
             F_Ns = Polyhedron(F_Ns');
-            F_N = F_Ns + obj.S_true;
+            F_N  = F_Ns + obj.S_true;
         end
         
         function [F_N_hat_opt, hs_hat_opt] = ComFeasibleRegion_UQOPT(obj)
             % compute the feasible region of s_0|k with \hat{S}_{opt}
             % outputs the feasible region F_N_hat_opt, the hs value
             % hs_hat_opt
-            F_Com = obj.F + obj.G*obj.K; % [F + GK]
+            F_Com      = obj.F + obj.G*obj.K; % [F + GK]
             hs_hat_opt = zeros(obj.nc, 1);
-            for i = 1:1:obj.nc
+            for i      = 1:1:obj.nc
                 hs_hat_opt(i) = full(obj.Com_hs_hat_opt(F_Com(i, :))); % elementwisely get hs vector
             end
 
             Nu_hat_opt = ComNu_RMPC(obj, hs_hat_opt);
             
             Sam_num = 5000;
-            Sample = 50*rand(2, Sam_num) - 25;
+            Sample  = 50*rand(2, Sam_num) - 25;
             yalmip('clear')
             z = sdpvar(size(obj.Psi, 2), 1);
-            proj_sample =  sdpvar(obj.nx, 1);
+            proj_sample  = sdpvar(obj.nx, 1);
             Input_sample = sdpvar(obj.nx, 1);
-            cns = [];
-            for i = 0:1:Nu_hat_opt
+            cns     = [];
+            for i   = 0:1:Nu_hat_opt
                 cns = [cns,obj.F_bar*(obj.Psi^i)*z <= ones(obj.nc, 1) - hs_hat_opt];
             end
-            cns = [cns,z(1:obj.nx) == proj_sample];
-            J = (proj_sample - Input_sample)'*(proj_sample - Input_sample);
-            ops = sdpsettings('relax', 0);
+            cns     = [cns,z(1:obj.nx) == proj_sample];
+            J       = (proj_sample - Input_sample)'*(proj_sample - Input_sample);
+            ops     = sdpsettings('relax', 0);
             Fea_Set = optimizer(cns, J, ops, Input_sample, proj_sample);
             
             % evaluate the function and form a convexhull
@@ -182,7 +182,7 @@ classdef ComputeFeasibleRegion < handle
             [convhull_index, ~] = convhull(sample_proj');
             F_Ns_hat_opt = sample_proj(:,convhull_index);
             F_Ns_hat_opt = Polyhedron(F_Ns_hat_opt');
-            F_N_hat_opt = F_Ns_hat_opt + obj.S_hat_opt;
+            F_N_hat_opt  = F_Ns_hat_opt + obj.S_hat_opt;
         end
 
         function [F_Ns, F_N] = ComFeasibleRegion_UQMPC(obj, S_hat, h_k)
@@ -190,8 +190,8 @@ classdef ComputeFeasibleRegion < handle
             % the region should be time-varying
             % it takes input S_hat and h_k, which are computed online
             F_Com = obj.F + obj.G*obj.K; % [F + GK]
-            hs = zeros(obj.nc, 1);
-            for i = 1:1:obj.nc
+            hs    = zeros(obj.nc, 1);
+            for i     = 1:1:obj.nc
                 hs(i) = full(obj.Com_hs(F_Com(i, :))); % elementwisely get hs vector
             end
             Nu = ComNu_RMPC(obj, hs);
@@ -199,18 +199,18 @@ classdef ComputeFeasibleRegion < handle
             Nu_k = Com_Nuk(obj, h_k, hs, Nu); % compute \nu_k according to Alg. 1
             
             Sam_num = 5000;
-            Sample = 50*rand(2, Sam_num) - 25;
+            Sample  = 50*rand(2, Sam_num) - 25;
             yalmip('clear')
-            z = sdpvar(size(obj.Psi, 2), 1);
-            proj_sample =  sdpvar(obj.nx, 1);
+            z            = sdpvar(size(obj.Psi, 2), 1);
+            proj_sample  = sdpvar(obj.nx, 1);
             Input_sample = sdpvar(obj.nx, 1);
-            cns = [];
-            for i = 0:1:Nu_k
+            cns     = [];
+            for i   = 0:1:Nu_k
                 cns = [cns,obj.F_bar*(obj.Psi^i)*z <= ones(obj.nc, 1) - h_k];
             end
-            cns = [cns,z(1:obj.nx) == proj_sample];
-            J = (proj_sample - Input_sample)'*(proj_sample - Input_sample);
-            ops = sdpsettings('relax', 0);
+            cns     = [cns,z(1:obj.nx) == proj_sample];
+            J       = (proj_sample - Input_sample)'*(proj_sample - Input_sample);
+            ops     = sdpsettings('relax', 0);
             Fea_Set = optimizer(cns, J, ops, Input_sample, proj_sample);
             
             % evaluate the function and form a convexhull
@@ -235,8 +235,6 @@ classdef ComputeFeasibleRegion < handle
 
         function Com_hs = LP(obj)
             % LP for computing the hs with S
-            % the problem is LP, while the LP solver clp does not work well
-            % the NLP solver ipopt is accurate enough, takes longer time
             opti = casadi.Opti( );
             F_com = opti.parameter(1, obj.nx);
             e = opti.variable(obj.nx, 1);
@@ -251,8 +249,6 @@ classdef ComputeFeasibleRegion < handle
 
         function Com_hs_true = LP_true(obj)
             % LP for computing the hs_true with S_true
-            % the problem is LP, while the LP solver clp does not work well
-            % the NLP solver ipopt is accurate enough, takes longer time
             opti = casadi.Opti( );
             F_com = opti.parameter(1, obj.nx);
             e = opti.variable(obj.nx, 1);
@@ -267,8 +263,6 @@ classdef ComputeFeasibleRegion < handle
         
         function Com_hs_hat_opt = LP_hat_opt(obj)
             % LP for computing the \hat{hs}_opt with S_true
-            % the problem is LP, while the LP solver clp does not work well
-            % the NLP solver ipopt is accurate enough, takes longer time
             opti = casadi.Opti( );
             F_com = opti.parameter(1, obj.nx);
             e = opti.variable(obj.nx, 1);
@@ -283,8 +277,6 @@ classdef ComputeFeasibleRegion < handle
         
         function Com_hs_ini = LP_hs_ini(obj)
             % LP for computing the hs with S
-            % the problem is LP, while the LP solver clp does not work well
-            % the NLP solver ipopt is accurate enough, takes longer time
             opti = casadi.Opti( );
             F_com = opti.parameter(1, obj.nx);
             S_A  = opti.parameter(obj.num_half_space_S, obj.nx);
@@ -301,8 +293,6 @@ classdef ComputeFeasibleRegion < handle
 
         function Com_z = LP_Com_z(obj)
             % LP for computing the element of max{F_bar*(Pis)^(Nu + 1)*z}
-            % the problem is LP, while the LP solver clp does not work well
-            % the NLP solver ipopt is accurate enough, takes longer time
             opti = casadi.Opti( );
             M_i = opti.parameter(1, obj.nx + obj.N*obj.nu); % the i-th row of the matrix F_bar*(Psi)^(Nu + 1)
             hs = opti.parameter(obj.nc, 1);

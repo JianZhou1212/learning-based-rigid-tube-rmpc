@@ -50,7 +50,7 @@ classdef ScenarioMPC < handle
             x_k_full = repmat(x_k, obj.N_SC, 1);
             u_opt = obj.optimizer(x_k_full, scenarios);
             u_opt = full(u_opt);
-            u_k = u_opt(:, 1);
+            u_k   = u_opt(:, 1);
         end
 
         function scenarios = sample_scenarios(obj)
